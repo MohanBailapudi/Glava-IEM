@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponseRedirect,HttpResponse
+from django.http import HttpResponseRedirect,HttpResponse, JsonResponse
 from .forms import Solar_Form, Battery_Form
 from .models import Solar_Config, Solar_Forecast, Battery_Config_Data, LoadData
 from django.urls import reverse
 import json, logging
+from django.utils import timezone
 from tictactoe.views import solar
+from django.db import transaction
 
 
 def get_solar_data(request):
@@ -27,13 +29,17 @@ def get_solar_data(request):
             #json_data = HttpResponse('solar_url', kwargs={'latitude': latitude,'longitude':longitude, 'time_zone1': time_zone1, 'time_zone2': time_zone2})
             data = json.loads(json_data)
             Solar_Forecast.objects.all().delete()
-            for i in data:
-                time = i.get('time', None)
-                p_mp = i.get('p_mp', None)
-                com = Solar_Forecast()
-                com.time = time
-                com.p_mp = p_mp
-                com.save()
+            id = 0
+            with transaction.atomic():
+                for i in data:
+                    time = i.get('period_end', None)
+                    p_mp = i.get('pv_estimate', None)
+                    com = Solar_Forecast()
+                    com.time = time
+                    com.p_mp = p_mp
+                    id = id+1
+                    com.id = id
+                    com.save()
 
             return HttpResponseRedirect('/batteryform/')
             #return render(request, 'solar.html', {'form': form})
