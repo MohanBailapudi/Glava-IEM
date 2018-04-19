@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, render_to_response
 from django.http import HttpResponseRedirect,HttpResponse, JsonResponse
 from .forms import Solar_Form, Battery_Form
 from .models import Solar_Config, Solar_Forecast, Battery_Config_Data, LoadData
@@ -7,7 +7,10 @@ import json, logging
 from django.utils import timezone
 from tictactoe.views import solar
 from django.db import transaction
-
+from pandas import Timestamp
+from django.template.response import TemplateResponse
+from datetime import datetime
+from simulators.battery_simulator import Battery
 
 def get_solar_data(request):
     # if this is a POST request we need to process the form data
@@ -26,6 +29,7 @@ def get_solar_data(request):
             # solar_data = Solar_Config(latitude = latitude, longitude = longtude, time_zone = time_zone)
             # solar_data.save()
             json_data = solar(request,latitude,longitude,time_zone1,time_zone2).content
+            #print(json_data)
             #json_data = HttpResponse('solar_url', kwargs={'latitude': latitude,'longitude':longitude, 'time_zone1': time_zone1, 'time_zone2': time_zone2})
             data = json.loads(json_data)
             Solar_Forecast.objects.all().delete()
@@ -37,6 +41,7 @@ def get_solar_data(request):
                     com = Solar_Forecast()
                     com.time = time
                     com.p_mp = p_mp
+                    com.time_zone = time_zone1+"/"+time_zone2
                     id = id+1
                     com.id = id
                     com.save()
@@ -101,7 +106,47 @@ def upload_csv(request):
                 pass
     except Exception as e:
         logging.getLogger("error_logger").error("Unable to upload file. " + repr(e))
-    return HttpResponseRedirect(reverse("upload_csv"))
+    return HttpResponseRedirect(reverse("start_iem"))
 
 
+def start_iem(request):
+    data = {}
+    if "GET" == request.method:
+        return render(request,'start_iem.html', data)
+    return HttpResponseRedirect(reverse("iem_started"))
 
+
+def iem_started(request):
+    time_now = Timestamp(datetime.utcnow()).isoformat()[0:-16]
+    time_now10 = datetime.utcnow()
+    time_now1 = str(datetime.utcnow())[0:-7]
+    time_now1 = datetime.strptime(time_now1, '%Y-%m-%d %H:%M:%S')
+    data = Solar_Forecast.objects.filter(time__gte = time_now)[:5]
+    pv_forecast = []
+    for i in data:
+        pv_forecast.append(i.p_mp)
+    bat_initial_data = Battery_Config_Data.objects.latest('id')
+    load = 300
+    time0 = datetime.strptime(str(bat_initial_data.time0)[0:-13],'%Y-%m-%d %H:%M:%S')
+    if pv_forecast[0] > 0:
+        p_bal = pv_forecast[0] - load
+        initial_soc = bat_initial_data.initial_soc
+        dt = (time_now1 - time0).total_seconds() / 3600.0
+        capacity = bat_initial_data.capacity
+        if p_bal > 0:
+            current_soc = Battery(initial_soc,dt,'C',capacity)
+            current_soc.update_current(0,2)
+            soc = current_soc.soc_cc()
+            bat_initial_data.initial_soc = soc
+            bat_initial_data.time0 = time_now10
+            bat_initial_data.save()
+        else:
+            current_soc = Battery(initial_soc, dt, 'D', capacity)
+
+        print(soc)
+
+    return render(request,'displaydata.html', {'data':data, 'data1':bat_initial_data})
+
+def test(request):
+    if request.method == 'GET':
+        return JsonResponse({'hello':'Hi Teja999'}, safe=False)

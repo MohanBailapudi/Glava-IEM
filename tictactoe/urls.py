@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url
 from tictactoe.views import welcome, solar, Battery
-from gameplay.views import get_solar_data, get_battery_data, upload_csv
+from gameplay.views import get_solar_data, get_battery_data, upload_csv, start_iem, iem_started, test
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,5 +27,8 @@ urlpatterns = [
     url(r'solarform/', get_solar_data),
     url(r'batteryform/', get_battery_data),
     url(r'upload/csv/', upload_csv, name='upload_csv'),
+    url(r'startiem/', start_iem, name='start_iem'),
+    url(r'iemstarted/', iem_started, name='iem_started'),
+    url(r'test/', test, name='test'),
 
 ]

@@ -12,16 +12,19 @@ class Solar:
         self.tz = tz
 
     def solar_model(self):
-        pv_power_resp = solcast.get_pv_power_forecasts(-self.longitude, self.latitude, capacity=2000, tilt=23, azimuth=0,
+        print(self.longitude)
+        print(self.tz)
+        pv_power_resp = solcast.get_pv_power_forecasts(self.latitude, self.longitude, capacity=2000, tilt=23,
+                                                       azimuth=0,
                                                        api_key='xS2FpUCV7PHnWap-1ktf3Ktk1O1Z17k4')
-        df = pd.DataFrame(pv_power_resp.forecasts, columns= ['period','period_end','pv_estimate'])
+        df = pd.DataFrame(pv_power_resp.forecasts, columns=['period', 'period_end', 'pv_estimate'])
         df.drop('period', axis=1, inplace=True)
         df['period_end'] = pd.to_datetime(df['period_end'])
         df['period_end'] = df['period_end'].dt.tz_convert(self.tz)
         df.set_index('period_end', inplace=True)
         df = df.resample('5min').interpolate()
         df.reset_index(inplace=True)
-
+        #print(df)
         return df
 
 
