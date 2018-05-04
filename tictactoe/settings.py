@@ -25,6 +25,8 @@ SECRET_KEY = 'a_4dv^-r0lckfm#b@d*y1v3e48j(f@h)5k+bi)&@2!j-upo4#6'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CORS_ORIGIN_ALLOW_ALL = True
+
 ALLOWED_HOSTS = ['*']
 
 
@@ -37,7 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'gameplay'
+    'gameplay',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +51,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'tictactoe.urls'

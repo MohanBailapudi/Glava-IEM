@@ -16,19 +16,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import url
-from tictactoe.views import welcome, solar, Battery
-from gameplay.views import get_solar_data, get_battery_data, upload_csv, start_iem, iem_started, test
+from tictactoe.views import welcome
+from gameplay.views import get_solar_data, get_battery_data, upload_csv, start_iem, iem_started, test, two_froms
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('welcome',welcome),
-    url(r'solar/(?P<latitude>.*)/(?P<longitude>.*)/(?P<time_zone1>.*)/(?P<time_zone2>.*)/', solar, name= 'solar_url'),
-    url(r'battery/(?P<initila_soc>.*)/(?P<capacity>.*)/(?P<period>.*)/(?P<mode>.*)/', Battery, name= 'battery_url'),
+    # url(r'solar/(?P<latitude>.*)/(?P<longitude>.*)/(?P<time_zone1>.*)/(?P<time_zone2>.*)/', solar, name= 'solar_url'),
+    # url(r'battery/(?P<initila_soc>.*)/(?P<capacity>.*)/(?P<period>.*)/(?P<mode>.*)/', Battery, name= 'battery_url'),
     url(r'solarform/', get_solar_data),
     url(r'batteryform/', get_battery_data),
+    # url(r'form/',two_froms),
     url(r'upload/csv/', upload_csv, name='upload_csv'),
     url(r'startiem/', start_iem, name='start_iem'),
     url(r'iemstarted/', iem_started, name='iem_started'),
-    url(r'test/', test, name='test'),
+    url(r'test/', two_froms, name='two_forms'),
+    url(r'glava/load', two_froms, name='two_forms'),
 
 ]

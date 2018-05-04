@@ -7,10 +7,12 @@
 <body>
     <h1>HEY!!!!</h1>
     <p>
-        {% for i in data %}
-            {{i.p_mp}}
-            {{i.time}}
-        {% endfor %}
+    <p>System Status = {{system_status}}</p>
+    <p>Battery Status = {{battery_status}}</p>
+    <p>Grid Load Sharing = {{grid_sharing}}</p>
+    <p>Load = {{load}} Watts </p>
+    <p>Battery soc = {{battery_data.initial_soc}} %</p>
+    <P>PV Output = {{pv_data}}Watts</P>
     </p>
      <p>
         {{data1.time0}}

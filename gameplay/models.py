@@ -26,3 +26,7 @@ class Battery_Config_Data(models.Model):
 class LoadData(models.Model):
     date = models.DateField()
     temp = models.FloatField()
+
+class Energy(models.Model):
+    energy = models.FloatField()
+    energy_dsm = models.FloatField()
