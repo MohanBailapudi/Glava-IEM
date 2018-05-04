@@ -210,11 +210,11 @@ def iem_started(request):
         grid_status = 1
         c_utility = 20
         p_grid_max = 1000
-        c_utility_min = 10
+        c_utility_min = 20
         soc_min = 20
         soc_mid = 40
-        soc_max = 80
-        p_dsm = 200
+        soc_max = 90
+        p_dsm = 300
         if grid_status == 0:
             system_status = "Islanded Mode"
             if pv_forecast[0] != 0:
@@ -469,9 +469,6 @@ def iem_started(request):
                         start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
 
                     else:
-                        # t1 = threading.Thread(target=battery_cherge, args=(initial_soc, time0, capacity, p_dsm,))
-                        # t1.start()
-                        # t1.join()
                         start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
                         battery_status = "Battery below minimum limit"
                         grid_sharing = "Supplying the load at ToU price after DSM"
@@ -496,12 +493,12 @@ def iem_started(request):
         battery_data = Battery_Config_Data.objects.latest('id')
         pv_data = pv_forecast[0]
         payload = {'system_status': system_status, 'battery_status': battery_status, 'grid_status': grid_sharing,
-                   'load': load, 'battery_soc': round(battery_data.initial_soc,4), 'pv_forecast': round(pv_data,4), 'savings': round(savings,4), 'cost_if_grid_is_supplying': round(cost_if_grid_is_supplying,4), 'cost_with_algorithm': round(cost_with_algorithm,4) }
+                   'load': load, 'battery_soc': round(battery_data.initial_soc,4), 'pv_forecast': round(pv_data,4), 'savings': round(savings,4), 'cost_if_grid_is_supplying': cost_if_grid_is_supplying, 'cost_with_algorithm': cost_with_algorithm }
         # url = "http://172.16.18.148:3000/send_notification"
         # r = requests.post(url, data=json.loads(json.dumps(payload)))
         # print(r.status_code)
         #payload1 = {'CostWithExistingSystem': round(cost_if_grid_is_supplying,4), 'CostWithAlgorithm': round(cost_with_algorithm,4),'Savings': round(savings,4)}
-        payload1 = {'data':{'CostWithExistingSystem': int(cost_if_grid_is_supplying), 'CostWithAlgorithm': int(cost_with_algorithm),'Savings': int(savings)}}
+        payload1 = {'data':{'CostWithExistingSystem': cost_if_grid_is_supplying, 'CostWithAlgorithm': cost_with_algorithm,'Savings': savings}}
         #url = "https://jtxskf9600.execute-api.us-east-2.amazonaws.com/production/glava-iem-cost-saving-alogorithm"
         headers = {"content-type": "application/json"}
         url = "https://3mz01xr037.execute-api.us-east-1.amazonaws.com/test/test_idb"

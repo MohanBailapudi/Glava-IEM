@@ -23,14 +23,4 @@ def batter_degradaion_cost(soc, discharge_current):
     c_bat = replacement_cost/cost
     p_d = discharge_current*350
     f_bat = c_bat*(p_d - p_loss)
-    # print(c_bat)
-    # print(p_loss)
-    # print(p_d)
-    # print(alpha, beta)
-    # print(k)
-    #print(cost)
     return f_bat
-
-# if __name__ == '__main__':
-#     cost = batter_degradaion_cost(50,1)
-#     print(cost/0.01)
