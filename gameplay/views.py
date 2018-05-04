@@ -60,7 +60,7 @@ def get_solar_data(request):
 
 @csrf_exempt
 def two_froms(request):
-    if request.method == 'POST':
+    if request.method == 'GET':
         client = InfluxDBClient('52.14.130.182', 8086, 'TestSeries')
         client.delete_series(database='TestSeries', measurement='glava_iem_savings_algorithm')
         # create a form instance and populate it with data from the request:
@@ -71,9 +71,9 @@ def two_froms(request):
             # ...
             # redirect to a new URL:
         #data = json.loads(request.body)
-        latitude = request.POST['latitude']
-        longitude = request.POST['longitude']
-        time_zone1 = request.POST['time_zone']
+        # latitude = request.POST['latitude']
+        # longitude = request.POST['longitude']
+        # time_zone1 = request.POST['time_zone']
         # time_zone2 = request.POST['time_zone2']
         # solar_data = Solar_Config(latitude = latitude, longitude = longtude, time_zone = time_zone)
         # solar_data.save()
@@ -81,7 +81,7 @@ def two_froms(request):
         # print(json_data)
         # json_data = HttpResponse('solar_url', kwargs={'latitude': latitude,'longitude':longitude, 'time_zone1': time_zone1, 'time_zone2': time_zone2})
         #data = json.loads(json_data)
-        Solar_Forecast.objects.all().delete()
+        # Solar_Forecast.objects.all().delete()
         # id = 0
         # with transaction.atomic():
         #     for i in data:
@@ -97,8 +97,10 @@ def two_froms(request):
         # form2 = Battery_Form(data=request.POST)
         Battery_Config_Data.objects.all().delete()
         Energy.objects.all().delete()
-        initial_soc = request.POST['initial_soc']
-        capacity = request.POST['capacity']
+        # initial_soc = request.POST['initial_soc']
+        # capacity = request.POST['capacity']
+        initial_soc = 40
+        capacity = 100
         com = Battery_Config_Data()
         com.initial_soc = initial_soc
         com.capacity = capacity
@@ -505,7 +507,8 @@ def iem_started(request):
         r = requests.post(url, data=json.dumps(payload1), headers = headers)
         print("lambda status:", r.status_code)
         print(r.text)
-        return JsonResponse(payload, safe=False)
+        #return JsonResponse(payload, safe=False)
+        return HttpResponse("Hi!")
     #return render(request,'displaydata.html', {'battery_data':battery_data, 'pv_data':pv_data, 'load':load, 'system_status':system_status, 'battery_status':battery_status, 'grid_sharing':grid_sharing})
 
 
