@@ -16,12 +16,12 @@ class Battery:
 
         if self.mode == 'C':
             if self.SOC != 100 and self.SOC < 100:
-                self.SOC_current = self.SOC + abs(self.i1 - self.i0) * self.dt / self.capacity
+                self.SOC_current = self.SOC + abs(self.i1 - self.i0) *100* self.dt / self.capacity
             else:
                 self.SOC_current = self.SOC
                 print("Battery is fully charged")
         else:
-            self.SOC_current = self.SOC - abs(self.i1 - self.i0) * self.dt / self.capacity
+            self.SOC_current = self.SOC - abs(self.i1 - self.i0) *100* self.dt / self.capacity
         return self.SOC_current
 
 

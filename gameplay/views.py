@@ -60,9 +60,10 @@ def get_solar_data(request):
 
 @csrf_exempt
 def two_froms(request):
-    if request.method == 'GET':
+    if request.method == 'POST':
         client = InfluxDBClient('52.14.130.182', 8086, 'TestSeries')
         client.delete_series(database='TestSeries', measurement='glava_iem_savings_algorithm')
+        print("sereis deleted")
         # create a form instance and populate it with data from the request:
         #form1 = Solar_Form(data=request.POST)
         # check whether it's valid:
@@ -97,10 +98,10 @@ def two_froms(request):
         # form2 = Battery_Form(data=request.POST)
         Battery_Config_Data.objects.all().delete()
         Energy.objects.all().delete()
-        # initial_soc = request.POST['initial_soc']
-        # capacity = request.POST['capacity']
-        initial_soc = 40
-        capacity = 100
+        initial_soc = request.POST['initial_soc']
+        capacity = request.POST['capacity']
+        # initial_soc = 40
+        # capacity = 100
         com = Battery_Config_Data()
         com.initial_soc = initial_soc
         com.capacity = capacity
@@ -169,8 +170,7 @@ def start_iem(request):
 
 def battery_cherge(soc, time0, capacity, p_dsm):
 
-    while round(soc,2) <= 40.2:
-
+    while round(soc,2) <= 50:
         time_now1 = str(datetime.utcnow())[0:-7]
         time_now1 = datetime.strptime(time_now1, '%Y-%m-%d %H:%M:%S')
         dt = (time_now1 - time0).total_seconds() / 3600.0
@@ -219,169 +219,156 @@ def iem_started(request):
         p_dsm = 300
         if grid_status == 0:
             system_status = "Islanded Mode"
-            if pv_forecast[0] != 0:
-                p_bal = pv_forecast[0] - load
-                initial_soc = bat_initial_data.initial_soc,4
-                dt = (time_now1 - time0).total_seconds() / 3600.0
-                capacity = bat_initial_data.capacity
-                if p_bal > 0:
-                    if initial_soc < soc_max:
-                        if p_bal < p_bat_max:
-                            current_soc = Battery(initial_soc, dt, 'C', capacity)
-                            current_soc.update_current(0, 2)
-                            soc = current_soc.soc_cc()
-                            bat_initial_data.initial_soc = soc
-                            bat_initial_data.time0 = time_now10
-                            bat_initial_data.save()
-                            battery_status = "Battery is Charging from excess PV"
-                        else:
-                            print("pv shedding")
-                    else:
-                        print("pv shedding")
-                else:
-                    if initial_soc >= soc_mid:
-                        if p_bal < p_bat_max:
-                            current_soc = Battery(initial_soc, dt, 'D', capacity)
-                            current_soc.update_current(0, 2)
-                            soc = current_soc.soc_cc()
-                            bat_initial_data.initial_soc = soc
-                            bat_initial_data.time0 = time_now10
-                            bat_initial_data.save()
-                            battery_status = "Battery is Discharging to meet the balance load"
-                            savings1 = abs(p_bal) * dt / 1000
-                            try:
-                                com = Energy.objects.latest('id')
-                                temp = com.energy
-                                com.energy = savings1 + temp
-                                com.energy_dsm = 0
-                            except:
-                                com = Energy()
-                                com.energy = savings1
-                                com.energy_dsm = 0
-                            com.save()
-                            c_bat = batter_degradaion_cost(soc, 1)
-                            cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
-                            cost_if_grid_is_supplying = 0
-                            savings = 0
-                        else:
-                            current_soc = Battery(initial_soc, dt, 'D', capacity)
-                            ### Demand Side Management ###
-                            current = p_bal - p_dsm / 350
-                            current_soc.update_current(0, current)
-                            soc = current_soc.soc_cc()
-                            bat_initial_data.initial_soc = soc
-                            bat_initial_data.time0 = time_now10
-                            bat_initial_data.save()
-                            battery_status = "Battery is Discharging to meet the load after DSM"
-                            savings1 = abs(p_bal - p_dsm) * dt / 1000
-                            try:
-                                com = Energy.objects.latest('id')
-                                temp = com.energy
-                                com.energy = savings1 + temp
-                                com.energy_dsm = 0
-                            except:
-                                com = Energy()
-                                com.energy = savings1
-                                com.energy_dsm = 0
-                            com.save()
-                            c_bat = batter_degradaion_cost(soc, 1)
-                            cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
-                            cost_if_grid_is_supplying = 0
-                            savings = 0
-                    else:
-                        if initial_soc > soc_min and initial_soc < soc_mid:
-                            battery_status = "Battery Turned-off"
-                            cost_with_algorithm = 0
-                            cost_if_grid_is_supplying = 0
-                            savings = 0
-
-                        else:
-                            if pv_forecast[0] > 0:
-                                battery_status = "Battery Turned-off"
-                                cost_with_algorithm = 0
-                                cost_if_grid_is_supplying = 0
-                                savings = 0
-                            else:
-                                #print("shutdown")
-                                cost_with_algorithm = 0
-                                cost_if_grid_is_supplying = 0
-                                savings = 0
-        ### Grid Connected ###
-        else:
-            system_status = "Connected to Grid"
-            if pv_forecast[0] != 0:
-                p_bal = pv_forecast[0] - load
-                initial_soc = bat_initial_data.initial_soc
-                dt = (time_now1 - time0).total_seconds() / 3600.0
-                capacity = bat_initial_data.capacity
-                if p_bal >= 0:
-                    if initial_soc < soc_max:
+            # if pv_forecast[0] != 0:
+            p_bal = pv_forecast[0] - load
+            initial_soc = bat_initial_data.initial_soc, 4
+            dt = (time_now1 - time0).total_seconds() / 3600.0
+            capacity = bat_initial_data.capacity
+            if p_bal > 0:
+                if initial_soc < soc_max:
+                    if p_bal < p_bat_max:
                         current_soc = Battery(initial_soc, dt, 'C', capacity)
-                        current = p_bal / 350
+                        current = p_bal/350
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
                         bat_initial_data.time0 = time_now10
                         bat_initial_data.save()
-                        battery_status = "Battery charging from excess PV"
-                        grid_sharing = "Sharing Zero load"
-                        cost_with_algorithm = 0
+                        battery_status = "Battery is Charging from excess PV"
+                    else:
+                        print("pv shedding")
+                else:
+                    print("pv shedding")
+            else:
+                if initial_soc >= soc_mid:
+                    if p_bal < p_bat_max:
+                        current_soc = Battery(initial_soc, dt, 'D', capacity)
+                        current = abs(p_bal/350)
+                        current_soc.update_current(0, current)
+                        soc = current_soc.soc_cc()
+                        bat_initial_data.initial_soc = soc
+                        bat_initial_data.time0 = time_now10
+                        bat_initial_data.save()
+                        battery_status = "Battery is Discharging to meet the balance load"
+                        savings1 = abs(p_bal) * dt / 1000
+                        try:
+                            com = Energy.objects.latest('id')
+                            temp = com.energy
+                            com.energy = savings1 + temp
+                            com.energy_dsm = 0
+                        except:
+                            com = Energy()
+                            com.energy = savings1
+                            com.energy_dsm = 0
+                        com.save()
+                        c_bat = batter_degradaion_cost(soc, 1)
+                        cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
                         cost_if_grid_is_supplying = 0
                         savings = 0
                     else:
-                        battery_status = "Battery Full disconnecting battery from charging"
-                        grid_sharing = "Sharing Zero load"
+                        current_soc = Battery(initial_soc, dt, 'D', capacity)
+                        ### Demand Side Management ###
+                        current = p_bal - p_dsm / 350
+                        current_soc.update_current(0, current)
+                        soc = current_soc.soc_cc()
+                        bat_initial_data.initial_soc = soc
+                        bat_initial_data.time0 = time_now10
+                        bat_initial_data.save()
+                        battery_status = "Battery is Discharging to meet the load after DSM"
+                        savings1 = abs(p_bal - p_dsm) * dt / 1000
+                        try:
+                            com = Energy.objects.latest('id')
+                            temp = com.energy
+                            com.energy = savings1 + temp
+                            com.energy_dsm = 0
+                        except:
+                            com = Energy()
+                            com.energy = savings1
+                            com.energy_dsm = 0
+                        com.save()
+                        c_bat = batter_degradaion_cost(soc, 1)
+                        cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
+                        cost_if_grid_is_supplying = 0
+                        savings = 0
+                else:
+                    if initial_soc > soc_min and initial_soc < soc_mid:
+                        battery_status = "Battery Turned-off"
                         cost_with_algorithm = 0
                         cost_if_grid_is_supplying = 0
                         savings = 0
-                        #print("pv shedding")
+
+                    else:
+                        if pv_forecast[0] > 0:
+                            battery_status = "Battery Turned-off"
+                            cost_with_algorithm = 0
+                            cost_if_grid_is_supplying = 0
+                            savings = 0
+                        else:
+                            # print("shutdown")
+                            cost_with_algorithm = 0
+                            cost_if_grid_is_supplying = 0
+                            savings = 0
+        ### Grid Connected ###
+        else:
+            system_status = "Connected to Grid"
+            # if pv_forecast[0] != 0:
+            p_bal = pv_forecast[0] - load
+            initial_soc = bat_initial_data.initial_soc
+            dt = (time_now1 - time0).total_seconds() / 3600.0
+            capacity = bat_initial_data.capacity
+            if p_bal >= 0:
+                if initial_soc < soc_max:
+                    current_soc = Battery(initial_soc, dt, 'C', capacity)
+                    current = p_bal / 350
+                    current_soc.update_current(0, current)
+                    soc = current_soc.soc_cc()
+                    bat_initial_data.initial_soc = soc
+                    bat_initial_data.time0 = time_now10
+                    bat_initial_data.save()
+                    battery_status = "Battery charging from excess PV"
+                    grid_sharing = "Sharing Zero load"
+                    cost_with_algorithm = 0
+                    cost_if_grid_is_supplying = 0
+                    savings = 0
                 else:
-                    c_bat = batter_degradaion_cost(initial_soc, 1)
-                    if c_bat > c_utility:
-                        if p_bal < p_grid_max:
-                            if c_utility == c_utility_min:
-                                if initial_soc < soc_max:
-                                    current_soc = Battery(initial_soc, dt, 'C', capacity)
-                                    current = p_grid_max - p_bal / 350
-                                    current_soc.update_current(0, current)
-                                    soc = current_soc.soc_cc()
-                                    bat_initial_data.initial_soc = soc
-                                    bat_initial_data.time0 = time_now10
-                                    bat_initial_data.save()
-                                    battery_status = "Battery Charging from grid at minimum price"
-                                    grid_sharing = "Charging the battery and supplying the load at minimum unit price"
-                                    savings1 = abs(p_bal + p_grid_max - p_bal) * dt / 1000
-                                    try:
-                                        com = Energy.objects.latest('id')
-                                        temp = com.energy
-                                        com.energy = savings1 + temp
-                                        com.energy_dsm = 0
-                                    except:
-                                        com = Energy()
-                                        com.energy = savings1
-                                        com.energy_dsm = 0
-                                    com.save()
-                                    c_bat = batter_degradaion_cost(soc, 1)
-                                    cost_with_algorithm = Energy.objects.latest('id').energy * (c_utility_min)
-                                    cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility_min)
-                                    savings = 0
-                                else:
-                                    battery_status = "Battery Full disconnecting it"
-                                    grid_sharing = "Supplying the load at minimum unit price"
-                                    savings1 = abs(p_bal) * dt / 1000
-                                    try:
-                                        com = Energy.objects.latest('id')
-                                        temp = com.energy
-                                        com.energy = savings1 + temp
-                                    except:
-                                        com = Energy()
-                                        com.energy = savings1
-                                    com.save()
-                                    cost_with_algorithm = Energy.objects.latest('id').energy * (c_utility_min)
-                                    cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility_min)
-                                    savings = 0
+                    battery_status = "Battery Full disconnecting battery from charging"
+                    grid_sharing = "Sharing Zero load"
+                    cost_with_algorithm = 0
+                    cost_if_grid_is_supplying = 0
+                    savings = 0
+                    # print("pv shedding")
+            else:
+                c_bat = batter_degradaion_cost(initial_soc, 1)
+                if c_bat > c_utility:
+                    if p_bal < p_grid_max:
+                        if c_utility == c_utility_min:
+                            if initial_soc < soc_max:
+                                current_soc = Battery(initial_soc, dt, 'C', capacity)
+                                current = p_grid_max - p_bal / 350
+                                current_soc.update_current(0, current)
+                                soc = current_soc.soc_cc()
+                                bat_initial_data.initial_soc = soc
+                                bat_initial_data.time0 = time_now10
+                                bat_initial_data.save()
+                                battery_status = "Battery Charging from grid at minimum price"
+                                grid_sharing = "Charging the battery and supplying the load at minimum unit price"
+                                savings1 = abs(p_bal + p_grid_max - p_bal) * dt / 1000
+                                try:
+                                    com = Energy.objects.latest('id')
+                                    temp = com.energy
+                                    com.energy = savings1 + temp
+                                    com.energy_dsm = 0
+                                except:
+                                    com = Energy()
+                                    com.energy = savings1
+                                    com.energy_dsm = 0
+                                com.save()
+                                c_bat = batter_degradaion_cost(soc, 1)
+                                cost_with_algorithm = Energy.objects.latest('id').energy * (c_utility_min)
+                                cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility_min)
+                                savings = 0
                             else:
-                                battery_status = "Battery is idle"
+                                battery_status = "Battery Full disconnecting it"
                                 grid_sharing = "Supplying the load at minimum unit price"
                                 savings1 = abs(p_bal) * dt / 1000
                                 try:
@@ -395,85 +382,58 @@ def iem_started(request):
                                 cost_with_algorithm = Energy.objects.latest('id').energy * (c_utility_min)
                                 cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility_min)
                                 savings = 0
-
-                    elif soc_mid < round(initial_soc,4):
-                        #print("disconnect the grid")
-                        if p_bal < p_bat_max:
-                            current_soc = Battery(initial_soc, dt, 'D', capacity)
-                            current = p_bal / 350
-                            current_soc.update_current(0, current)
-                            soc = current_soc.soc_cc()
-                            bat_initial_data.initial_soc = soc
-                            bat_initial_data.time0 = time_now10
-                            bat_initial_data.save()
-                            battery_status = "Battery Discharging is cheap to supply the load"
-                            grid_sharing = "Sharing Zero load"
+                        else:
+                            battery_status = "Battery is idle"
+                            grid_sharing = "Supplying the load at minimum unit price"
                             savings1 = abs(p_bal) * dt / 1000
                             try:
                                 com = Energy.objects.latest('id')
                                 temp = com.energy
                                 com.energy = savings1 + temp
-                                com.energy_dsm = 0
                             except:
                                 com = Energy()
                                 com.energy = savings1
-                                com.energy_dsm = 0
                             com.save()
-                            cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
-                            cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility)
-                            savings = cost_if_grid_is_supplying - cost_with_algorithm
-                        else:
-                            current_soc = Battery(initial_soc, dt, 'D', capacity)
-                            ### Demand Side Management ###
-                            current = p_bal - p_dsm / 350
-                            current_soc.update_current(0, current)
-                            soc = current_soc.soc_cc()
-                            bat_initial_data.initial_soc = soc
-                            bat_initial_data.time0 = time_now10
-                            bat_initial_data.save()
-                            battery_status = "Battery available capaity is less than the load, DSM id done and balance is supplied by battery"
-                            savings1 = abs(p_bal-p_dsm) * dt / 1000
-                            cost_dsm = p_dsm*dt/1000
-                            try:
-                                com = Energy.objects.latest('id')
-                                temp = com.energy
-                                temp1 = com.energy_dsm
-                                com.energy = savings1 + temp
-                                com.energy_dsm = temp1 + cost_dsm
-                            except:
-                                com = Energy()
-                                com.energy = savings1
-                                com.energy_dsm = cost_dsm
-                            com.save()
-                            cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat) + Energy.objects.latest('id').energy_dsm*c_utility
-                            cost_if_grid_is_supplying = (Energy.objects.latest('id').energy + Energy.objects.latest('id').energy_dsm)*c_utility
-                            savings = cost_if_grid_is_supplying - cost_with_algorithm
-                    elif round(initial_soc,4) == soc_mid:
-                        battery_status = "Battery reached minimum limit"
-                        grid_sharing = "Supplying the load at ToU price after DSM"
-                        soc = initial_soc
-                        savings1 = abs(p_bal - p_dsm) * dt / 1000
-                        cost_dsm = p_dsm * dt / 1000
-                        try:
-                            com = Energy.objects.latest('id')
-                            temp = com.energy
-                            temp1 = com.energy_dsm
-                            com.energy = savings1 + temp
-                            com.energy_dsm = temp1 + cost_dsm
-                        except:
-                            com = Energy()
-                            com.energy = savings1
-                            com.energy_dsm = cost_dsm
-                        com.save()
-                        cost_with_algorithm = Energy.objects.latest('id').energy * c_utility
-                        cost_if_grid_is_supplying = (Energy.objects.latest('id').energy + Energy.objects.latest('id').energy_dsm) * c_utility
-                        savings = cost_if_grid_is_supplying - cost_with_algorithm
-                        start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
+                            cost_with_algorithm = Energy.objects.latest('id').energy * (c_utility_min)
+                            cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility_min)
+                            savings = 0
 
+                elif soc_mid < round(initial_soc, 4):
+                    # print("disconnect the grid")
+                    if p_bal < p_bat_max:
+                        current_soc = Battery(initial_soc, dt, 'D', capacity)
+                        current = p_bal / 350
+                        current_soc.update_current(0, current)
+                        soc = current_soc.soc_cc()
+                        bat_initial_data.initial_soc = soc
+                        bat_initial_data.time0 = time_now10
+                        bat_initial_data.save()
+                        battery_status = "Battery Discharging is cheap to supply the load"
+                        grid_sharing = "Sharing Zero load"
+                        savings1 = abs(p_bal) * dt / 1000
+                        # try:
+                        #     com = Energy.objects.latest('id')
+                        #     temp = com.energy
+                        #     com.energy = savings1 + temp
+                        #     com.energy_dsm = 0
+                        # except:
+                        com = Energy()
+                        com.energy = savings1
+                        com.energy_dsm = 0
+                        com.save()
+                        cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
+                        cost_if_grid_is_supplying = Energy.objects.latest('id').energy * (c_utility)
+                        savings = cost_if_grid_is_supplying - cost_with_algorithm
                     else:
-                        start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
-                        battery_status = "Battery below minimum limit"
-                        grid_sharing = "Supplying the load at ToU price after DSM"
+                        current_soc = Battery(initial_soc, dt, 'D', capacity)
+                        ### Demand Side Management ###
+                        current = p_bal - p_dsm / 350
+                        current_soc.update_current(0, current)
+                        soc = current_soc.soc_cc()
+                        bat_initial_data.initial_soc = soc
+                        bat_initial_data.time0 = time_now10
+                        bat_initial_data.save()
+                        battery_status = "Battery available capaity is less than the load, DSM id done and balance is supplied by battery"
                         savings1 = abs(p_bal - p_dsm) * dt / 1000
                         cost_dsm = p_dsm * dt / 1000
                         try:
@@ -487,10 +447,55 @@ def iem_started(request):
                             com.energy = savings1
                             com.energy_dsm = cost_dsm
                         com.save()
-                        cost_with_algorithm = Energy.objects.latest('id').energy * c_utility
+                        cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat) + Energy.objects.latest(
+                            'id').energy_dsm * c_utility
                         cost_if_grid_is_supplying = (Energy.objects.latest('id').energy + Energy.objects.latest(
                             'id').energy_dsm) * c_utility
                         savings = cost_if_grid_is_supplying - cost_with_algorithm
+                elif round(initial_soc, 4) == soc_mid:
+                    battery_status = "Battery reached minimum limit"
+                    grid_sharing = "Supplying the load at ToU price after DSM"
+                    soc = initial_soc
+                    savings1 = abs(p_bal - p_dsm) * dt / 1000
+                    cost_dsm = p_dsm * dt / 1000
+                    try:
+                        com = Energy.objects.latest('id')
+                        temp = com.energy
+                        temp1 = com.energy_dsm
+                        com.energy = savings1 + temp
+                        com.energy_dsm = temp1 + cost_dsm
+                    except:
+                        com = Energy()
+                        com.energy = savings1
+                        com.energy_dsm = cost_dsm
+                    com.save()
+                    cost_with_algorithm = Energy.objects.latest('id').energy * c_utility
+                    cost_if_grid_is_supplying = (Energy.objects.latest('id').energy + Energy.objects.latest(
+                        'id').energy_dsm) * c_utility
+                    savings = cost_if_grid_is_supplying - cost_with_algorithm
+                    start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
+
+                else:
+                    start_new_thread(battery_cherge, (initial_soc, time0, capacity, p_dsm,))
+                    battery_status = "Battery below minimum limit"
+                    grid_sharing = "Supplying the load at ToU price after DSM"
+                    savings1 = abs(p_bal - p_dsm) * dt / 1000
+                    cost_dsm = p_dsm * dt / 1000
+                    try:
+                        com = Energy.objects.latest('id')
+                        temp = com.energy
+                        temp1 = com.energy_dsm
+                        com.energy = savings1 + temp
+                        com.energy_dsm = temp1 + cost_dsm
+                    except:
+                        com = Energy()
+                        com.energy = savings1
+                        com.energy_dsm = cost_dsm
+                    com.save()
+                    cost_with_algorithm = Energy.objects.latest('id').energy * c_utility
+                    cost_if_grid_is_supplying = (Energy.objects.latest('id').energy + Energy.objects.latest(
+                        'id').energy_dsm) * c_utility
+                    savings = cost_if_grid_is_supplying - cost_with_algorithm
 
         battery_data = Battery_Config_Data.objects.latest('id')
         pv_data = pv_forecast[0]
@@ -507,8 +512,8 @@ def iem_started(request):
         r = requests.post(url, data=json.dumps(payload1), headers = headers)
         print("lambda status:", r.status_code)
         print(r.text)
-        #return JsonResponse(payload, safe=False)
-        return HttpResponse("Hi!")
+        return JsonResponse(payload, safe=False)
+        # return HttpResponse("Hi!")
     #return render(request,'displaydata.html', {'battery_data':battery_data, 'pv_data':pv_data, 'load':load, 'system_status':system_status, 'battery_status':battery_status, 'grid_sharing':grid_sharing})
 
 

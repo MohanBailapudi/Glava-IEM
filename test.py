@@ -16,11 +16,11 @@ def batter_degradaion_cost(soc, discharge_current):
     R = 1
     v_r = 350
     k = (v_full - v_nom + A * (math.exp(-B * q_nom)) * (q - q_nom)) / q_nom
-    cost = c_rated * dod_r * (0.9 * l_r - 0.1)/67
+    cost = c_rated * dod_r * (0.9 * l_r - 0.1)
     alpha = (R + k /(soc/100))/v_r**2
     beta = (c_rated*k*(1-(soc/100)))/(v_r**2*(soc/100))
     p_loss = alpha*(discharge_current*350)**2 + beta*(discharge_current*350)
     c_bat = replacement_cost/cost
     p_d = discharge_current*350
-    f_bat = c_bat*(p_d - p_loss)
+    f_bat = c_bat*(p_d - p_loss)*100
     return f_bat
