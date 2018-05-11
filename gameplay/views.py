@@ -207,6 +207,7 @@ def iem_started(request):
         pv_forecast.append(float(data['CH_03'])*3.5)
         bat_initial_data = Battery_Config_Data.objects.latest('id')
         load = (float(data['CH_07'])+float(data['CH_08']))*3.5
+        current = float(data['CH_05']) - (float(data['CH_07'])+float(data['CH_08']))
         if float(data['CH_06']) == 350:
             grid_status = 1
         else:
@@ -234,7 +235,7 @@ def iem_started(request):
                     if p_bal < p_bat_max:
                         ### Normalize ###
                         current_soc = Battery(initial_soc, dt, 'C', capacity)
-                        current = p_bal/350
+                        # current = p_bal/350
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
@@ -254,7 +255,7 @@ def iem_started(request):
                     if p_bal < p_bat_max:
                         ### Normalize ###
                         current_soc = Battery(initial_soc, dt, 'D', capacity)
-                        current = abs(p_bal/350)
+                        # current = abs(p_bal/350)
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
@@ -280,7 +281,7 @@ def iem_started(request):
                     else:
                         ### Load Control ###
                         current_soc = Battery(initial_soc, dt, 'D', capacity)
-                        current = p_bal - p_dsm / 350
+                        # current = p_bal - p_dsm / 350
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
@@ -342,7 +343,7 @@ def iem_started(request):
                     ### Normalize ###
                     ### connect the grid ###
                     current_soc = Battery(initial_soc, dt, 'C', capacity)
-                    current = p_bal / 350
+                    # current = p_bal / 350
                     current_soc.update_current(0, current)
                     soc = current_soc.soc_cc()
                     bat_initial_data.initial_soc = soc
@@ -368,7 +369,7 @@ def iem_started(request):
                                 ### Normalize ###
                                 ### connect the grid ###
                                 current_soc = Battery(initial_soc, dt, 'C', capacity)
-                                current = p_grid_max - p_bal / 350
+                                # current = p_grid_max - p_bal / 350
                                 current_soc.update_current(0, current)
                                 soc = current_soc.soc_cc()
                                 bat_initial_data.initial_soc = soc
@@ -447,7 +448,7 @@ def iem_started(request):
                     ### Disconeect the grid ###
                     if p_bal < p_bat_max:
                         current_soc = Battery(initial_soc, dt, 'D', capacity)
-                        current = p_bal / 350
+                        # current = p_bal / 350
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
@@ -472,7 +473,7 @@ def iem_started(request):
                         ### Load Control ###
                         ### Disconeect the grid ###
                         current_soc = Battery(initial_soc, dt, 'D', capacity)
-                        current = p_bal - p_dsm / 350
+                        # current = p_bal - p_dsm / 350
                         current_soc.update_current(0, current)
                         soc = current_soc.soc_cc()
                         bat_initial_data.initial_soc = soc
