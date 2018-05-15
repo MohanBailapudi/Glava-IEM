@@ -274,7 +274,7 @@ def iem_started(request):
                             com.energy = savings1
                             com.energy_dsm = 0
                         com.save()
-                        c_bat = batter_degradaion_cost(soc, 1)
+                        c_bat = batter_degradaion_cost(soc, current)
                         cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
                         cost_if_grid_is_supplying = 0
                         savings = 0
@@ -300,7 +300,7 @@ def iem_started(request):
                             com.energy = savings1
                             com.energy_dsm = 0
                         com.save()
-                        c_bat = batter_degradaion_cost(soc, 1)
+                        c_bat = batter_degradaion_cost(soc, current)
                         cost_with_algorithm = Energy.objects.latest('id').energy * (c_bat)
                         cost_if_grid_is_supplying = 0
                         savings = 0
